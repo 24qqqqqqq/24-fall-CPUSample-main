@@ -1,70 +1,23 @@
 `include "lib/defines.vh"
-module mycpu_core(
+module EX(
     input wire clk,
     input wire rst,
-    input wire [5:0] int,
+    // input wire flush,
+    input wire [`StallBus-1:0] stall,
 
-<<<<<<< HEAD
-    output wire inst_sram_en,
-    output wire [3:0] inst_sram_wen,
-    output wire [31:0] inst_sram_addr,
-    output wire [31:0] inst_sram_wdata,
-    input wire [31:0] inst_sram_rdata,
-
-=======
     input wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
     
     output wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
 
->>>>>>> 5d459bfb85ab1e519246f5e8fdedaef6e60030e5
     output wire data_sram_en,
     output wire [3:0] data_sram_wen,
     output wire [31:0] data_sram_addr,
-<<<<<<< HEAD
-    output wire [31:0] data_sram_wdata,
-    input wire [31:0] data_sram_rdata,
-
-    output wire [31:0] debug_wb_pc,
-    output wire [3:0] debug_wb_rf_wen,
-    output wire [4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata
-=======
     output wire [37:0] ex_to_id,
     output wire [31:0] data_sram_wdata,
     output wire stallreq_from_ex,
     output wire ex_is_load,
     output wire [65:0] hilo_ex_to_id
->>>>>>> 5d459bfb85ab1e519246f5e8fdedaef6e60030e5
 );
-<<<<<<< HEAD
-    wire [`IF_TO_ID_WD-1:0] if_to_id_bus;
-    wire [`ID_TO_EX_WD-1:0] id_to_ex_bus;
-    wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus;
-    wire [37:0] ex_to_id;
-    wire [37:0] mem_to_id;
-    wire [37:0] wb_to_id;
-    wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus;
-    wire [`BR_WD-1:0] br_bus; 
-    wire [`DATA_SRAM_WD-1:0] ex_dt_sram_bus;
-    wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus;
-    wire [`StallBus-1:0] stall;
-    wire stallreq_from_id;
-    wire stallreq_from_ex;
-    wire ex_is_load;
-    wire [65:0] hilo_ex_to_id;
-
-    IF u_IF(
-    	.clk             (clk             ),
-        .rst             (rst             ),
-        .stall           (stall           ),
-        .br_bus          (br_bus          ),
-        .if_to_id_bus    (if_to_id_bus    ),
-        .inst_sram_en    (inst_sram_en    ),
-        .inst_sram_wen   (inst_sram_wen   ),
-        .inst_sram_addr  (inst_sram_addr  ),
-        .inst_sram_wdata (inst_sram_wdata )
-    );
-=======
    
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
 
@@ -138,43 +91,13 @@ module mycpu_core(
     assign alu_src2 = sel_alu_src2[1] ? imm_sign_extend :
                       sel_alu_src2[2] ? 32'd8 :
                       sel_alu_src2[3] ? imm_zero_extend : rf_rdata2;
->>>>>>> 5d459bfb85ab1e519246f5e8fdedaef6e60030e5
     
-
-    ID u_ID(
-    	.clk             (clk             ),
-        .rst             (rst             ),
-        .stall           (stall           ),
-        .ex_is_load      (ex_is_load      ),
-        .stallreq        (stallreq        ),
-        .if_to_id_bus    (if_to_id_bus    ),
-        .inst_sram_rdata (inst_sram_rdata ),
-        .wb_to_rf_bus    (wb_to_rf_bus    ),
-        .ex_to_id        (ex_to_id        ),
-        .mem_to_id       (mem_to_id       ),
-        .wb_to_id        (wb_to_id        ),
-        .hilo_ex_to_id   (hilo_ex_to_id   ),
-        .id_to_ex_bus    (id_to_ex_bus    ),
-        .br_bus          (br_bus          ),
-        .stallreq_from_id(stallreq_from_id)
+    alu u_alu(
+    	.alu_control (alu_op ),
+        .alu_src1    (alu_src1    ),
+        .alu_src2    (alu_src2    ),
+        .alu_result  (alu_result  )
     );
-<<<<<<< HEAD
-
-    EX u_EX(
-    	.clk             (clk             ),
-        .rst             (rst             ),
-        .stall           (stall           ),
-        .id_to_ex_bus    (id_to_ex_bus    ),
-        .ex_to_mem_bus   (ex_to_mem_bus   ),
-        .data_sram_en    (data_sram_en    ),
-        .data_sram_wen   (data_sram_wen   ),
-        .data_sram_addr  (data_sram_addr  ),
-        .ex_to_id        (ex_to_id        ),
-        .data_sram_wdata (data_sram_wdata ),
-        .stallreq_from_ex(stallreq_from_ex),
-        .ex_is_load      (ex_is_load      ),
-        .hilo_ex_to_id   (hilo_ex_to_id   )
-=======
     
     assign ex_result = alu_result;
 
@@ -279,7 +202,6 @@ module mycpu_core(
 	    .start_i        (mul_start_o      ),
 	    .result_o       (mul_result     ),
 	    .ready_o        (mul_ready_i     )
->>>>>>> 5d459bfb85ab1e519246f5e8fdedaef6e60030e5
     );
     always @ (*) begin
         if (rst) begin
@@ -349,16 +271,6 @@ module mycpu_core(
     end
     //******************************************************************
 
-<<<<<<< HEAD
-    MEM u_MEM(
-    	.clk             (clk             ),
-        .rst             (rst             ),
-        .stall           (stall           ),
-        .ex_to_mem_bus   (ex_to_mem_bus   ),
-        .data_sram_rdata (data_sram_rdata ),
-        .mem_to_id       (mem_to_id       ),
-        .mem_to_wb_bus   (mem_to_wb_bus   )
-=======
 
 
 
@@ -384,31 +296,8 @@ module mycpu_core(
         .annul_i      (1'b0             ),  //是否取消除法运算，1位取消
         .result_o     (div_result       ),  // 除法结果 64bit
         .ready_o      (div_ready_i      )   // 除法是否结束
->>>>>>> 5d459bfb85ab1e519246f5e8fdedaef6e60030e5
-    );
-    
-    WB u_WB(
-    	.clk               (clk               ),
-        .rst               (rst               ),
-        .stall             (stall             ),
-        .mem_to_wb_bus     (mem_to_wb_bus     ),
-        .wb_to_rf_bus      (wb_to_rf_bus      ),
-        .wb_to_id          (wb_to_id          ),
-        .debug_wb_pc       (debug_wb_pc       ),
-        .debug_wb_rf_wen   (debug_wb_rf_wen   ),
-        .debug_wb_rf_wnum  (debug_wb_rf_wnum  ),
-        .debug_wb_rf_wdata (debug_wb_rf_wdata )
     );
 
-<<<<<<< HEAD
-    CTRL u_CTRL(
-    	.rst   (rst   ),
-        .stallreq_from_ex  (stallreq_from_ex  ),
-        .stallreq_from_id  (stallreq_from_id  ),
-        .stall (stall )
-    );
-    
-=======
     always @ (*) begin
         if (rst) begin
             stallreq_for_div = `NoStop;
@@ -477,5 +366,4 @@ module mycpu_core(
     end
 
     // mul_result 和 div_result 可以直接使用
->>>>>>> 5d459bfb85ab1e519246f5e8fdedaef6e60030e5
 endmodule
