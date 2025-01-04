@@ -1,10 +1,10 @@
-`include "lib/defines.vh"
+`include "lib/defines.vh"   // 处理从指令获取阶段（IF）传来的指令，并生成相应的控制信号和数据，传递给执行阶段（EX）
 module ID(
     input wire clk,// 时钟信号
     input wire rst,// 复位信号
     // input wire flush,
     input wire [`StallBus-1:0] stall,// 暂停信号
-    input wire ex_is_load,// ex段是否是load指令（指示是否是加载指令的信号）
+    input wire ex_is_load,//# ex段是否是load指令（指示是否是加载指令的信号）
     output wire stallreq,// 暂停请求信号
 
     input wire [`IF_TO_ID_WD-1:0] if_to_id_bus,// 从IF段传来的数据
@@ -14,15 +14,15 @@ module ID(
     input wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus,// 从wb段传来的数据
 
 
-    input wire [37:0] ex_to_id,// 从ex段传来的数据
-    input wire [37:0] mem_to_id,// 从mem段传来的数据
-    input wire [37:0] wb_to_id,// 从wb段传来的数据
+    input wire [37:0] ex_to_id,//# 从ex段传来的数据
+    input wire [37:0] mem_to_id,//# 从mem段传来的数据
+    input wire [37:0] wb_to_id,//# 从wb段传来的数据
 
-    input wire [65:0] hilo_ex_to_id,// 从ex段传来的数据
+    input wire [65:0] hilo_ex_to_id,//# 从ex段传来的数据
     output wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,// 传给ex段的数据
 
     output wire [`BR_WD-1:0] br_bus,// 传给br段的数据
-    output wire stallreq_from_id// 从ID段传来的暂停请求信号
+    output wire stallreq_from_id//# 从ID段传来的暂停请求信号
     );
 // );
 
@@ -39,51 +39,51 @@ module ID(
     wire [4:0] wb_id_waddr;// 写ID段地址
     wire [31:0] wb_id_wdata;// 写ID段数据
 
-    wire mem_id_we;// 写mem段使能
-    wire [4:0] mem_id_waddr;// 写mem段地址
-    wire [31:0] mem_id_wdata;// 写mem段数据
-    reg q;// 暂停信号
-    wire ex_id_we;// 写ex段使能
-    wire [4:0] ex_id_waddr;// 写ex段地址
-    wire [31:0] ex_id_wdata;// 写ex段数据
+    wire mem_id_we;//# 写mem段使能
+    wire [4:0] mem_id_waddr;//# 写mem段地址
+    wire [31:0] mem_id_wdata;//# 写mem段数据
+    reg q;//# 暂停信号
+    wire ex_id_we;//# 写ex段使能
+    wire [4:0] ex_id_waddr;//# 写ex段地址
+    wire [31:0] ex_id_wdata;//# 写ex段数据
 
     always @ (posedge clk) begin// 当时钟上升沿时
         if (rst) begin// 如果复位信号为1
-            if_to_id_bus_r <= `IF_TO_ID_WD'b0;        // 从IF段传来的数据
+            if_to_id_bus_r <= `IF_TO_ID_WD'b0;        // 清空从IF段传来的数据
         end
         // else if (flush) begin
         //     ic_to_id_bus <= `IC_TO_ID_WD'b0;
         // end
         else if (stall[1]==`Stop && stall[2]==`NoStop) begin// 如果暂停信号为1
-            if_to_id_bus_r <= `IF_TO_ID_WD'b0;// 从IF段传来的数据
+            if_to_id_bus_r <= `IF_TO_ID_WD'b0;// 清空从IF段传来的数据
         end
         else if (stall[1]==`NoStop) begin// 如果暂停信号为0
-            if_to_id_bus_r <= if_to_id_bus;// 从IF段传来的数据
+            if_to_id_bus_r <= if_to_id_bus;// 更新从IF段传来的数据
         end
     end
-
+    //#
     always @(posedge clk) begin// 当时钟上升沿时
         if (stall[1]==`Stop) begin// 如果暂停信号为1
-            q <= 1'b1;// 暂停信号为1
+            q <= 1'b1;// 设置暂停信号
         end
         else begin// 如果暂停信号为0
-            q <= 1'b0;// 暂停信号为0
+            q <= 1'b0;// 清除暂停信号
         end
-    end
-    assign inst = (q) ?inst: inst_sram_rdata;// 指令
+    end //#
+    assign inst = (q) ?inst: inst_sram_rdata;//# 根据暂停信号选择指令
 
     //assign inst = inst_sram_rdata;
 
-    assign {// pc
+    assign {
         ce,// 控制信号
-        id_pc// pc
+        id_pc// 程序计数器
     } = if_to_id_bus_r;// 从IF段传来的数据
     assign {// 写寄存器文件使能
         wb_rf_we,// 写寄存器文件使能
         wb_rf_waddr,// 写寄存器文件地址
         wb_rf_wdata// 写寄存器文件数据
     } = wb_to_rf_bus;// 从wb段传来的数据
-
+    //#
     assign {// 写ID段使能
         wb_id_we,// 写ID段使能
         wb_id_waddr,// 写ID段地址
@@ -101,7 +101,7 @@ module ID(
         ex_id_waddr,// 写ex段地址
         ex_id_wdata// 写ex段数据
     } = ex_to_id;// 从ex段传来的数据
-
+//#
     wire [5:0] opcode;// 操作码
     wire [4:0] rs,rt,rd,sa;// 寄存器地址
     wire [5:0] func;// 功能码
@@ -121,7 +121,7 @@ module ID(
 
     wire data_ram_en;// 数据存储器使能
     wire [3:0] data_ram_wen;// 数据存储器写使能
-    wire [3:0] data_ram_readen;// 数据存储器读使能
+    wire [3:0] data_ram_readen;//# 数据存储器读使能
     
     wire rf_we;// 寄存器文件写使能
     wire [4:0] rf_waddr;// 寄存器文件写地址
@@ -132,7 +132,7 @@ module ID(
     wire [31:0] rdata11, rdata22;// 寄存器数据
 
 
-
+//#
     wire hi_r,hi_wen,lo_r,lo_wen;// HI寄存器，LO寄存器
     wire [31:0] hi_data;
     wire [31:0] lo_data;
@@ -145,8 +145,10 @@ module ID(
     } = hilo_ex_to_id;
 
     assign hi_r = inst_mfhi;
-    assign lo_r = inst_mflo;
-
+    assign lo_r = inst_mflo;//#
+    //寄存器文件操作：
+//实例化寄存器文件模块，处理寄存器的读写操作。
+//根据指令类型和数据依赖关系，选择正确的寄存器数据
     regfile u_regfile(
     	.clk    (clk    ),
         .raddr1 (rs ),
@@ -156,15 +158,16 @@ module ID(
         .we     (wb_rf_we     ),
         .waddr  (wb_rf_waddr  ),
         .wdata  (wb_rf_wdata  ),
-
+//#
         .hi_r      ( hi_r   ),
         .hi_we     (  hi_wen   ),
         .hi_data   (  hi_data  ),
         .lo_r      (  lo_r   ),
         .lo_we     (   lo_wen   ),
         .lo_data   (   lo_data  ),
-        .hilo_data (   hilo_data )
+        .hilo_data (   hilo_data )//#
     );
+    //#
     wire [31:0] mf_data;
     assign mf_data = (inst_mfhi & hi_wen) ? hi_data
                     :(inst_mfhi) ? hilo_data
@@ -182,7 +185,7 @@ module ID(
                    :(ex_id_we &(ex_id_waddr==rt))?ex_id_wdata
                    : (mem_id_we &(mem_id_waddr==rt)) ? mem_id_wdata
                    : (wb_id_we &(wb_id_waddr==rt)) ? wb_id_wdata 
-                   : rdata2;
+                   : rdata2;//#
 
     assign opcode = inst[31:26];
     assign rs = inst[25:21];
@@ -196,7 +199,7 @@ module ID(
     assign base = inst[25:21];
     assign offset = inst[15:0];
     assign sel = inst[2:0];
-
+    // # 指令解码
     wire inst_ori, inst_lui, inst_addiu, inst_beq,
     //inst_ori 寄存器 rs 中的值与 0 扩展至 32 位的立即数 imm 按位逻辑或，结果写入寄存器 rt 中。
     //inst_lui 将 16 位立即数 imm 写入寄存器 rt 的高 16 位，寄存器 rt 的低 16 位置 0
@@ -270,7 +273,7 @@ module ID(
              //最低字节存入存储器中。
     inst_lsa,
     inst_sh; //将 base 寄存器的值加上符号扩展后的立即数 offset 得到访存的虚地址，如果地址不是 2 的整数倍
-             //则触发地址错例外，否则据此虚地址将 rt 寄存器的低半字存入存储器中。
+             //则触发地址错例外，否则据此虚地址将 rt 寄存器的低半字存入存储器中。//#
     wire op_add, op_sub, op_slt, op_sltu;
     wire op_and, op_nor, op_or, op_xor;
     wire op_sll, op_srl, op_sra, op_lui;
@@ -300,6 +303,7 @@ module ID(
     assign inst_lui     = op_d[6'b00_1111];
     assign inst_addiu   = op_d[6'b00_1001];
     assign inst_beq     = op_d[6'b00_0100];
+    //#
     assign inst_subu    = op_d[6'b00_0000] && func_d[6'b10_0011];
     assign inst_jr      = op_d[6'b00_0000] && func_d[6'b00_1000];
     assign inst_jal     = op_d[6'b00_0011];
@@ -348,34 +352,34 @@ module ID(
     assign inst_lhu     = op_d[6'b10_0101];
     assign inst_sb      = op_d[6'b10_1000];
     assign inst_sh      = op_d[6'b10_1001];
-    assign inst_lsa     = op_d[6'b01_1100] && func_d[6'b11_0111];
+    assign inst_lsa     = op_d[6'b01_1100] && func_d[6'b11_0111];//#
 
-    // rs to reg1
+    // rs to reg1(改)
     assign sel_alu_src1[0] =inst_sh | inst_sb | inst_lhu | inst_lh | inst_lbu | inst_bgez | inst_srlv | inst_srav | inst_sllv | inst_andi | inst_and | inst_sub | inst_addi | inst_add | inst_sltiu | inst_slti | inst_slt | inst_sltu | inst_sw | inst_nor | inst_xori | inst_xor | inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | 
                             inst_or   | inst_mflo  |inst_mfhi | inst_lb |inst_lsa;
 
-    // pc to reg1
+    // pc to reg1（改）
     assign sel_alu_src1[1] =  inst_jal | inst_bltzal | inst_bgezal |inst_jalr;
 
-    // sa_zero_extend to reg1
+    // sa_zero_extend to reg1（改）
     assign sel_alu_src1[2] =inst_srl |inst_sra | inst_sll;
 
     
-    // rt to reg2
+    // rt to reg2（改）
     assign sel_alu_src2[0] =inst_lsa|inst_mfhi|inst_mflo | inst_srl | inst_srlv | inst_srav | inst_sra | inst_sllv | inst_and | inst_sub | inst_add | inst_slt | inst_sltu | inst_nor | inst_xor  | inst_subu | inst_addu | inst_or | inst_sll |inst_div | inst_divu;
     
-    // imm_sign_extend to reg2
+    // imm_sign_extend to reg2（改）
     assign sel_alu_src2[1] =inst_sh | inst_sb | inst_lhu | inst_lh | inst_lbu | inst_addi | inst_sltiu | inst_slti | inst_sw | inst_lui | inst_addiu | inst_lw |inst_lb;
 
-    // 32'b8 to reg2
+    // 32'b8 to reg2（改）
     assign sel_alu_src2[2] = inst_jal | inst_bltzal | inst_bgezal |inst_jalr;
 
-    // imm_zero_extend to reg2
+    // imm_zero_extend to reg2（改）
     assign sel_alu_src2[3] = inst_andi | inst_xori | inst_ori;
 
 
 
-    assign op_add =inst_lsa|inst_sh | inst_sb | inst_lhu | inst_lh | inst_lbu |  inst_lb | inst_addi | inst_add | inst_addiu | inst_lw | inst_addu | inst_jal | inst_sw | inst_bltzal |inst_bgezal|inst_jalr;
+    assign op_add =inst_lsa|inst_sh | inst_sb | inst_lhu | inst_lh | inst_lbu |  inst_lb | inst_addi | inst_add | inst_addiu | inst_lw | inst_addu | inst_jal | inst_sw | inst_bltzal |inst_bgezal|inst_jalr;//#下面全改
     assign op_sub =inst_sub | inst_subu;
     assign op_slt = inst_slt | inst_slti; //有符号比较
     assign op_sltu = inst_sltu|inst_sltiu;  //无符号比较
