@@ -7,8 +7,8 @@ module regfile(
     output wire [31:0] rdata2,
     
     input wire we,// 写使能信号，用于指定是否写入寄存器
-    input wire [4:0] waddr,// 写入地址，用于指定要写入的寄存器地址
-    input wire [31:0] wdata,// 写入数据，用于指定要写入的寄存器数据
+    input wire [4:0] waddr,// 写用于指定要写入的寄存器地址
+    input wire [31:0] wdata,// 写入数据入地址，，用于指定要写入的寄存器数据
 
     input wire hi_r,// 读取hi和lo寄存器的使能信号，高位寄存器
     input wire hi_we,// 写入hi和lo寄存器的使能信号，高位寄存器
@@ -47,8 +47,10 @@ module regfile(
     end
 
     // read out 1
+    // 读取寄存器数据
     assign rdata1 = (raddr1 == 5'b0) ? 32'b0 : reg_array[raddr1];
 
     // read out2
+    // 读取寄存器数据
     assign rdata2 = (raddr2 == 5'b0) ? 32'b0 : reg_array[raddr2];
 endmodule

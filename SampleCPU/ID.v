@@ -46,7 +46,7 @@ module ID(
     wire ex_id_we;//# 写ex段使能
     wire [4:0] ex_id_waddr;//# 写ex段地址
     wire [31:0] ex_id_wdata;//# 写ex段数据
-
+    // ! 数据寄存
     always @ (posedge clk) begin// 当时钟上升沿时
         if (rst) begin// 如果复位信号为1
             if_to_id_bus_r <= `IF_TO_ID_WD'b0;        // 清空从IF段传来的数据
@@ -61,7 +61,7 @@ module ID(
             if_to_id_bus_r <= if_to_id_bus;// 更新从IF段传来的数据
         end
     end
-    //#
+    //# 指令选择，根据暂停信号选择当前指令。
     always @(posedge clk) begin// 当时钟上升沿时
         if (stall[1]==`Stop) begin// 如果暂停信号为1
             q <= 1'b1;// 设置暂停信号
@@ -73,7 +73,7 @@ module ID(
     assign inst = (q) ?inst: inst_sram_rdata;//# 根据暂停信号选择指令
 
     //assign inst = inst_sram_rdata;
-
+    //  指令解码,从指令中提取操作码、寄存器地址、功能码等字段。使用解码器对操作码和功能码进行解码，生成相应的控制信号
     assign {
         ce,// 控制信号
         id_pc// 程序计数器
@@ -101,7 +101,7 @@ module ID(
         ex_id_waddr,// 写ex段地址
         ex_id_wdata// 写ex段数据
     } = ex_to_id;// 从ex段传来的数据
-//#
+//# 操作码和功能码解码
     wire [5:0] opcode;// 操作码
     wire [4:0] rs,rt,rd,sa;// 寄存器地址
     wire [5:0] func;// 功能码
@@ -277,7 +277,8 @@ module ID(
     wire op_add, op_sub, op_slt, op_sltu;
     wire op_and, op_nor, op_or, op_xor;
     wire op_sll, op_srl, op_sra, op_lui;
-
+    // 指令解码，将指令的操作码（opcode）和功能码（func）解码成具体的指令信号
+    // 实例化解码器模块，用于将操作码和功能码解码成对应的信号
     decoder_6_64 u0_decoder_6_64(
     	.in  (opcode  ),
         .out (op_d )
@@ -298,7 +299,7 @@ module ID(
         .out (rt_d )
     );
 
-    
+    //将解码器输出的信号赋值给具体的指令信号
     assign inst_ori     = op_d[6'b00_1101];
     assign inst_lui     = op_d[6'b00_1111];
     assign inst_addiu   = op_d[6'b00_1001];
@@ -353,7 +354,7 @@ module ID(
     assign inst_sb      = op_d[6'b10_1000];
     assign inst_sh      = op_d[6'b10_1001];
     assign inst_lsa     = op_d[6'b01_1100] && func_d[6'b11_0111];//#
-
+    // ALU操作信号生成
     // rs to reg1(改)
     assign sel_alu_src1[0] =inst_sh | inst_sb | inst_lhu | inst_lh | inst_lbu | inst_bgez | inst_srlv | inst_srav | inst_sllv | inst_andi | inst_and | inst_sub | inst_addi | inst_add | inst_sltiu | inst_slti | inst_slt | inst_sltu | inst_sw | inst_nor | inst_xori | inst_xor | inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | 
                             inst_or   | inst_mflo  |inst_mfhi | inst_lb |inst_lsa;
@@ -396,7 +397,7 @@ module ID(
                      op_and, op_nor, op_or, op_xor,
                      op_sll, op_srl, op_sra, op_lui};
 
-
+    // 数据存储器和寄存器文件控制信号生成
     // mem load and store enable
     assign data_ram_en =inst_sh | inst_sb | inst_lhu | inst_lh | inst_lbu | inst_lw | inst_sw | inst_lb;
 
